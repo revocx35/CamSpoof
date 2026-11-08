@@ -86,8 +86,16 @@ APKs: `app/build/outputs/apk/{debug,release}/app-<abi>-<type>.apk`. **One APK pe
 - Package / applicationId `io.github.revocx35.camspoof`; compile/targetSdk 37, minSdk 26.
 - Versions from `gradle/libs.versions.toml` (AGP 9.4.1, Kotlin 2.4.20, Gradle 9.8.0, CameraX 1.5.0).
 - The agent prints machine lines prefixed `csf:` (`loaded`, `feed <w>x<h>`, `hook <api> ok|skip`,
-  `ready`, `error <msg>`, `no-pid`). `InjectionParser.parse` is the single parser and is
-  unit-tested — keep them in step.
+  `ready`, `error <msg>`, `no-pid`, `log <msg>`). `InjectionParser.parse` is the single parser and
+  is unit-tested — keep them in step.
+- **Diagnostics/recon:** the agent also appends a human log to `/data/local/tmp/camspoof/agent.log`
+  (created 0666 by `prepareFeed`) recording how the target uses the camera — legacy vs Camera2,
+  `openCamera` id, capture-session output Surfaces, `ImageReader` format/size. The app's **Diag**
+  button reads it via root (`Injector.readDiagnostics`) and shares it. This is the primary tool for
+  figuring out which frame path an app (e.g. WhatsApp/CamScanner) uses before writing a swap.
+- **Timing matters:** hooks on `createCaptureSession`/`openCamera` only catch cameras opened *after*
+  injection. Inject (Start) first, then open the camera in the target; if it was already open, close
+  and reopen it.
 - The feed header offsets in `feed/FeedFormat.kt` and `agent/index.js` are one wire format. Change
   both together; `FeedFormatTest` guards `OFF_SEQ`/`HEADER_SIZE`.
 - The on-screen overlay transforms and the compositor use the **same normalized math** (centre as a

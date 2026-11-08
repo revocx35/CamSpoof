@@ -60,6 +60,9 @@ class CamSpoofViewModel(app: Application) : AndroidViewModel(app), SceneProvider
         private set
     var selectedTarget by mutableStateOf<TargetApp?>(null)
 
+    /** Agent diagnostics log text, shown in a dialog when non-null. */
+    var diagText by mutableStateOf<String?>(null)
+
     private var previewView: PreviewView? = null
     private var compositor: FrameCompositor? = null
 
@@ -133,7 +136,11 @@ class CamSpoofViewModel(app: Application) : AndroidViewModel(app), SceneProvider
             }
             compositor = comp
             val result: InjectionResult = withContext(Dispatchers.IO) { injector.inject(target) }
-            status = result.summary
+            status = if (result.success) {
+                result.summary + " Now OPEN THE CAMERA in the target app (if it was already open, close and reopen it). Tap Diag to see how it uses the camera."
+            } else {
+                result.summary
+            }
             spoofing = result.success
             if (!result.success) {
                 comp.stop()
@@ -142,6 +149,15 @@ class CamSpoofViewModel(app: Application) : AndroidViewModel(app), SceneProvider
             busy = false
         }
     }
+
+    fun loadDiagnostics() {
+        diagText = "Loading…"
+        viewModelScope.launch {
+            diagText = withContext(Dispatchers.IO) { injector.readDiagnostics() }
+        }
+    }
+
+    fun clearDiagnostics() { diagText = null }
 
     private fun stopSpoof() {
         compositor?.stop()

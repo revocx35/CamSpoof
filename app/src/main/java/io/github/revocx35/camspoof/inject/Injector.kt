@@ -32,6 +32,13 @@ class Injector(private val context: Context) {
         return out.lineSequence().any { it.trim() == "0" }
     }
 
+    /** Read the agent's diagnostics log (how the target used the camera) via root, so it works
+     *  regardless of SELinux state. */
+    fun readDiagnostics(): String {
+        val out = runSu("cat /data/local/tmp/camspoof/agent.log 2>/dev/null")
+        return out.ifBlank { "(no agent.log yet — run Start spoofing on a target first, then open its camera)" }
+    }
+
     /** Create the shared feed files and set SELinux permissive. Returns a status message. */
     fun prepareFeed(): String {
         val script = buildString {
@@ -40,6 +47,8 @@ class Injector(private val context: Context) {
             append("for f in feed audio; do ")
             append("f=/data/local/tmp/camspoof/${'$'}f; ")
             append("[ -e \"${'$'}f\" ] || : > \"${'$'}f\"; chmod 666 \"${'$'}f\"; done; ")
+            // Fresh diagnostics log each session, world-writable so the injected agent can append.
+            append(": > /data/local/tmp/camspoof/agent.log; chmod 666 /data/local/tmp/camspoof/agent.log; ")
             append("echo csf:setup-ok; echo csf:selinux ${'$'}(getenforce 2>/dev/null)")
         }
         return runSu(script)

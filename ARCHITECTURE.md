@@ -41,12 +41,18 @@ movable overlays + audio mixer) and a per-app camera injector, built for the own
    - `TargetApp`/`AppRepository` list launchable installed apps for the picker.
 
 4. **Frida agent** (`agent/index.js` → `app/src/main/assets/agent.js`)
-   Injected into the target. Maps the feed (seqlock reader) and installs camera hooks:
-   - **Legacy `android.hardware.Camera`**: stores the app's `PreviewCallback` and drives it from a
-     timer with our NV21 frames (so the app's `onPreviewFrame` gets our pixels).
-   - **`android.media.ImageReader`** (Camera2/CameraX apps that read `YUV_420_888`): overwrites the
-     Y/U/V planes of each acquired `Image` with our frame.
-   Emits `csf:loaded/feed/hook/ready/error`.
+   Injected into the target. Maps the feed (seqlock reader), runs a **reconnaissance** pass, and
+   installs best-effort delivery hooks:
+   - **Recon/diagnostics:** logs how the app uses the camera — legacy vs Camera2, `openCamera` id,
+     `createCaptureSession` output Surfaces, `ImageReader` format/size — to
+     `/data/local/tmp/camspoof/agent.log` and as `csf:log` lines. The app's **Diag** button surfaces
+     it. This is how we learn which frame path a specific app uses so we can target the right swap.
+   - **Legacy `android.hardware.Camera`** delivery: stores the app's `PreviewCallback` and drives it
+     from a timer with our NV21 frames.
+   - **`android.media.ImageReader`** delivery (Camera2/CameraX apps that read `YUV_420_888`):
+     overwrites the Y/U/V planes of each acquired `Image`.
+   All hooks are wrapped so a failure can never crash the host app. Emits
+   `csf:loaded/feed/hook/log/ready/error`.
 
 ## Data flow
 

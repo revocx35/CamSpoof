@@ -21,7 +21,10 @@ instead, the same approach as the sibling `flagsecure-off` app.
 - **Volumes** — a microphone channel and one slider per video overlay (video sliders drive live
   playback volume).
 - **Choose target app → Start spoofing** — CamSpoof sets up the shared feed (root), injects the
-  agent into that app, and the app starts receiving your composited frames.
+  agent into that app, and the app starts receiving your composited frames. Open the camera in the
+  target app **after** Start (if it was already open, close and reopen it).
+- **Diag** — shows how the target app actually used the camera (legacy vs Camera2, formats, session
+  surfaces) and lets you share the log. Use it when an app doesn't pick up the feed.
 
 ## How it works
 

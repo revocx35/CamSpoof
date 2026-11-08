@@ -123,6 +123,7 @@ fun CameraScreen(vm: CamSpoofViewModel) {
                     Text(vm.selectedTarget?.label ?: "Choose target app", maxLines = 1)
                 }
                 OutlinedButton(onClick = { showMixer = !showMixer }) { Text(if (showMixer) "Hide mix" else "Mix") }
+                OutlinedButton(onClick = { vm.loadDiagnostics() }, enabled = vm.hasRoot) { Text("Diag") }
             }
 
             Button(
@@ -154,6 +155,21 @@ fun CameraScreen(vm: CamSpoofViewModel) {
                 targets = vm.targets,
                 onPick = { vm.selectedTarget = it; showTargets = false },
                 onDismiss = { showTargets = false },
+            )
+        }
+
+        vm.diagText?.let { text ->
+            DiagnosticsDialog(
+                text = text,
+                onShare = {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "CamSpoof diagnostics")
+                        putExtra(android.content.Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, "Share diagnostics"))
+                },
+                onDismiss = { vm.clearDiagnostics() },
             )
         }
     }
